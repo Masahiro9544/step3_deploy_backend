@@ -1,0 +1,46 @@
+from sqlalchemy import String, Integer
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+# from datetime import datetime
+
+
+class Base(DeclarativeBase):
+    pass
+
+class Words(Base):
+    __tablename__ = 'words'
+    id: Mapped[int] = mapped_column(primary_key=True)
+    text_en: Mapped[str] = mapped_column()
+    text_ja: Mapped[str] = mapped_column()
+    translation: Mapped[str] = mapped_column()
+    example: Mapped[str] = mapped_column()
+    category: Mapped[str] = mapped_column()
+    level: Mapped[str] = mapped_column()
+
+# class Customers(Base):
+#     __tablename__ = 'customers'
+#     customer_id: Mapped[str] = mapped_column(String(10), primary_key=True)
+#     customer_name: Mapped[str] = mapped_column(String(100))
+#     age: Mapped[int] = mapped_column(Integer)
+#     gender: Mapped[str] = mapped_column(String(10))
+
+
+# class Items(Base):
+#     __tablename__ = 'items'
+#     item_id: Mapped[str] = mapped_column(String(10), primary_key=True)
+#     item_name: Mapped[str] = mapped_column(String(100))
+#     price: Mapped[int] = mapped_column(Integer)
+
+
+# class Purchases(Base):
+#     __tablename__ = 'purchases'
+#     purchase_id: Mapped[str] = mapped_column(String(10), primary_key=True)
+#     customer_id: Mapped[str] = mapped_column(String(10))
+#     purchase_date: Mapped[str] = mapped_column(String(10))
+
+
+# class PurchaseDetails(Base):
+#     __tablename__ = 'purchase_details'
+#     detail_id: Mapped[str] = mapped_column(String(10), primary_key=True)
+#     purchase_id: Mapped[str] = mapped_column(String(10))
+#     item_id: Mapped[str] = mapped_column(String(10))
+#     quantity: Mapped[int] = mapped_column(Integer)
