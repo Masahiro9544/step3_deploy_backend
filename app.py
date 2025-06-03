@@ -1,5 +1,6 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import requests
 import json
@@ -22,6 +23,10 @@ class Word(BaseModel):
 class Select(BaseModel):
     category: str
     level: str
+
+class WordProgressUpdate(BaseModel):
+    word_id: int
+    is_completed: bool
 
 
 app = FastAPI()
@@ -62,7 +67,7 @@ def read_one_word(id: int):
 @app.post("/words")
 def pull_word(word: Select):
     values = word.dict()
-    result = crud.myselect(mymodels.Words, word.category, word.level)
+    result = crud.myselect(mymodels.Words, mymodels.Progress, word.category, word.level)
 
     if result:
         result_obj = json.loads(result)
@@ -76,7 +81,13 @@ def register_word(data: Word):
 
     if result:
         return result if result else None
-    
+
+
+@app.put("/completeword")
+def complete_phrase(data: WordProgressUpdate):
+    crud.update_completion_status(mymodels.Progress, data.word_id, data.is_completed)
+    return {"message": "Completion status updated"}
+
 
 # @app.post("/customers")
 # def create_customer(customer: Customer):

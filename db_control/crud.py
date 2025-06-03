@@ -2,35 +2,37 @@
 import platform
 print("platform", platform.uname())
 
-
 import sqlalchemy
 from sqlalchemy import create_engine, insert, delete, update, select, func
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import IntegrityError
+from datetime import datetime
 import json
 import pandas as pd
 
 from db_control.connect_MySQL import engine
-from db_control.mymodels_MySQL import Words
+from db_control.mymodels_MySQL import Words, Progress
 
 
-def myselect(mymodel, category, level):
+def myselect(Word, Progress, category, level):
     #session構築
     Session = sessionmaker(bind=engine)
     session = Session()
-    query = session.query(mymodel).filter(mymodel.category == category, mymodel.level == level)
+    query = session.query(Word, Progress).outerjoin(Progress, (Word.id == Progress.word_id)).filter(Word.category == category, Word.level == level)
     try:
         #トランザクションを開始
         with session.begin():
             result = query.order_by(func.random()).limit(3).all()
         #結果をオブジェクトから辞書に変換し、リストに追加
         result_dict_list = []
-        for word_info in result:
+        for word_info, progress in result:
             result_dict_list.append({
                 "id": word_info.id,
                 "text_en": word_info.text_en,
                 "text_ja": word_info.text_ja,
                 "translation": word_info.translation,
                 "example": word_info.example,
+                "is_completed": progress.is_completed if progress else False
             })
         #リストをJSONに変換
         result_json = json.dumps(result_dict_list, ensure_ascii=False)
@@ -113,39 +115,29 @@ def onewordselect(mymodel, id):
     return result_json
 
 
-# def myupdate(mymodel, values):
-#     # session構築
-#     Session = sessionmaker(bind=engine)
-#     session = Session()
+def update_completion_status(mymodel, word_id, is_completed):
+    # セッション作成
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
-#     customer_id = values.pop("customer_id")
+    # 更新する値
+    values = {
+        "is_completed": is_completed,
+        "completed_date": datetime.utcnow()
+    }
 
-#     query = "お見事！E0002の原因はこのクエリの実装ミスです。正しく実装しましょう"
-#     try:
-#         # トランザクションを開始
-#         with session.begin():
-#             result = session.execute(query)
-#     except sqlalchemy.exc.IntegrityError:
-#         print("一意制約違反により、挿入に失敗しました")
-#         session.rollback()
-#     # セッションを閉じる
-#     session.close()
-#     return "put"
+    # UPDATE クエリ構築
+    query = update(mymodel).values(values).where(Progress.word_id == word_id)
 
+    try:
+        # トランザクションを開始
+        with session.begin():
+            result = session.execute(query)
+    except IntegrityError:
+        print("一意制約違反などにより更新に失敗しました")
+        session.rollback()
+    finally:
+        # セッションをクローズ
+        session.close()
 
-# def mydelete(mymodel, customer_id):
-#     # session構築
-#     Session = sessionmaker(bind=engine)
-#     session = Session()
-#     query = delete(mymodel).where(mymodel.customer_id == customer_id)
-#     try:
-#         # トランザクションを開始
-#         with session.begin():
-#             result = session.execute(query)
-#     except sqlalchemy.exc.IntegrityError:
-#         print("一意制約違反により、挿入に失敗しました")
-#         session.rollback()
-
-#     # セッションを閉じる
-#     session.close()
-#     return customer_id + " is deleted"
+    return "put"
